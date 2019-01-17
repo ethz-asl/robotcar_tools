@@ -23,7 +23,7 @@ from transform import *
 def iterate_vo(root):
   ins_path = os.path.join(root, "vo", "vo.csv")
 
-  T_O_Ik = mk.Transformation()
+  T_XB30_XB3k = mk.Transformation()
 
   first = True
   with open(ins_path) as ins_file:
@@ -44,11 +44,11 @@ def iterate_vo(root):
           pitch_rad = float(row[6])
           yaw_rad = float(row[7])
 
-          T_Ik_Ikp1 =  mk.Transformation(build_se3_transform([x, y, z, roll_rad, pitch_rad, yaw_rad]))
+          T_XB3k_XB3kp1 =  mk.Transformation(build_se3_transform([x, y, z, roll_rad, pitch_rad, yaw_rad]))
           
           if first:
             first = False
-            yield timestamp_ns_dest, T_O_Ik
+            yield timestamp_ns_dest, T_XB30_XB3k
           
-          T_O_Ik = T_O_Ik * T_Ik_Ikp1
-          yield timestamp_ns_source, T_O_Ik
+          T_XB30_XB3k = T_XB30_XB3k * T_XB3k_XB3kp1
+          yield timestamp_ns_source, T_XB30_XB3k

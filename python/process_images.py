@@ -41,6 +41,9 @@ def process_images(root_dir, camera_description, models_dir):
   idx = 0
   for line in timestamps_file:
       tokens = line.split()
+      if len(tokens) < 2:
+        break
+
       timestamp_us = long(tokens[0])
       timestamp_ns = timestamp_us * long(1000)
 
@@ -103,7 +106,6 @@ def processDataset(root_dir, models_dir, dataset_name, camera=''):
 def main():
     parser = argparse.ArgumentParser(description='''...''')
     parser.add_argument('root_dir')
-    parser.add_argument('models_dir')
     parser.add_argument('--dataset', default='')
     parser.add_argument('--camera', default='')
     
@@ -112,8 +114,8 @@ def main():
     root_dir = parsed_args.root_dir
     assert(os.path.exists(root_dir))
 
-    models_dir = parsed_args.models_dir
-    assert(os.path.exists(models_dir))
+    models_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, 'models')
+    assert(os.path.exists(models_dir)) 
 
     camera = parsed_args.camera
     

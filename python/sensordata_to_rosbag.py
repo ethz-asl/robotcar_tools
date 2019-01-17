@@ -65,19 +65,21 @@ def write_rtk_gps(timestamp_ns, T_UTM_S, utm_zone, lat_deg, lon_deg, alt_m, stat
     bag.write('/gps_rtk', rospose, t=ros_timestamp)
     bag.write('/gps_rtk_fix', fix, t=ros_timestamp)
 
-def write_odometry(ts_ns, T_O_B, bag):
+def write_odometry(ts_ns, T_XB30_XB3k, bag):
     ros_timestamp = nanoseconds_to_ros_timestamp(ts_ns)
 
+    T_B0_Bk = get_T_B_XB3() * T_XB30_XB3k * get_T_B_XB3.inverse()
+
     rospose = Odometry()
-    rospose.child_frame_id = "XB3"
+    rospose.child_frame_id = "B"
     rospose.header.stamp = ros_timestamp
-    rospose.pose.pose.position.x = T_O_B.getPosition()[0]
-    rospose.pose.pose.position.y = T_O_B.getPosition()[1]
-    rospose.pose.pose.position.z = T_O_B.getPosition()[2]
-    rospose.pose.pose.orientation.x = T_O_B.getRotation().x()
-    rospose.pose.pose.orientation.y = T_O_B.getRotation().y()
-    rospose.pose.pose.orientation.z = T_O_B.getRotation().z()
-    rospose.pose.pose.orientation.w = T_O_B.getRotation().w()
+    rospose.pose.pose.position.x = T_B0_Bk.getPosition()[0]
+    rospose.pose.pose.position.y = T_B0_Bk.getPosition()[1]
+    rospose.pose.pose.position.z = T_B0_Bk.getPosition()[2]
+    rospose.pose.pose.orientation.x = T_B0_Bk.getRotation().x()
+    rospose.pose.pose.orientation.y = T_B0_Bk.getRotation().y()
+    rospose.pose.pose.orientation.z = T_B0_Bk.getRotation().z()
+    rospose.pose.pose.orientation.w = T_B0_Bk.getRotation().w()
     rospose.twist.twist.linear.x = 0.0
     rospose.twist.twist.linear.y = 0.0
     rospose.twist.twist.linear.z = 0.0
@@ -115,8 +117,8 @@ def processDataset(root_dir, models_dir, dataset_name, out_dir):
     bag = rosbag.Bag(bag_filepath, 'w')
 
     print "Writing odometry..."
-    for t_ns, T_O_Ik in iterate_vo(dataset_dir):
-      write_odometry(t_ns, T_O_Ik, bag)
+    for t_ns, T_XB30_XB3k in iterate_vo(dataset_dir):
+      write_odometry(t_ns, T_XB30_XB3k, bag)
     print "Done"
 
     print "Writing RTK GPS..."

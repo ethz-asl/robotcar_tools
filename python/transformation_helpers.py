@@ -35,7 +35,13 @@ def getTransformationFromEulerAnglesRollPitchYawRadXYZMeters(roll_rad, pitch_rad
   return T
 
 # Convert x forward, y right, z down to x forward, y left, z up.
-def get_R_ENU_NED():
+def get_T_ENU_NED():
+  C_BZU_B = np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]])
+  T_BZU_B = mk.Transformation(mk.Quaternion(C_BZU_B), np.array([0.0, 0.0, 0.0]))
+
+  return T_BZU_B
+
+def get_T_B_XB3():
   C_BZU_B = np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]])
   T_BZU_B = mk.Transformation(mk.Quaternion(C_BZU_B), np.array([0.0, 0.0, 0.0]))
 

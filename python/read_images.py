@@ -36,8 +36,12 @@ def iterate_images(root_dir, camera_description, models_dir):
 
   current_chunk = 0
   timestamps_file = open(timestamps_path)
+  i = 0
   for line in timestamps_file:
       tokens = line.split()
+      if len(tokens) < 2:
+        break
+
       timestamp_us = long(tokens[0])
       timestamp_ns = timestamp_us * long(1000)
 
@@ -61,7 +65,15 @@ def iterate_images(root_dir, camera_description, models_dir):
         img = load_image(filename, model)
 
         im_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        filename_gray = os.path.join(images_dir, tokens[0] + '_undistorted.png')
+        cv2.imwrite(filename_gray, im_gray)
+
         im_gray_downscaled = cv2.resize(im_gray, (im_gray.shape[1] / 2, im_gray.shape[0] / 2))
-        cv2.imwrite(im_gray_downscaled, filename_processed)
+        cv2.imwrite(filename_processed, im_gray_downscaled)
+
+      if i % 100 == 0:
+        print "At i ", i
+
+      i += 1
 
       yield timestamp_ns, im_gray_downscaled
