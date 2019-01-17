@@ -1,0 +1,6 @@
+vo
+stereo/left
+mono_left
+mono_rear
+mono_right
+gps
