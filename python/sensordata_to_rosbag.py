@@ -24,6 +24,7 @@ from time_helpers import *
 from read_images import *
 from read_rtk_gps import *
 from read_vo import *
+from transformation_helpers import *
 
 def write_rtk_gps(timestamp_ns, T_UTM_S, utm_zone, lat_deg, lon_deg, alt_m, status, bag):
     ros_timestamp = nanoseconds_to_ros_timestamp(timestamp_ns)
@@ -68,7 +69,7 @@ def write_rtk_gps(timestamp_ns, T_UTM_S, utm_zone, lat_deg, lon_deg, alt_m, stat
 def write_odometry(ts_ns, T_XB30_XB3k, bag):
     ros_timestamp = nanoseconds_to_ros_timestamp(ts_ns)
 
-    T_B0_Bk = get_T_B_XB3() * T_XB30_XB3k * get_T_B_XB3.inverse()
+    T_B0_Bk = get_T_B_XB3() * T_XB30_XB3k * get_T_B_XB3().inverse()
 
     rospose = Odometry()
     rospose.child_frame_id = "B"
@@ -102,14 +103,14 @@ def write_img(ts_ns, img_array, camera, bag):
 
   bag.write('/' + camera + '/image_raw', rosimage, t=ros_timestamp)
 
-def processDataset(root_dir, models_dir, dataset_name, out_dir):
+def processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process):
     assert(len(dataset_name) > 0)
 
     dataset_dir = os.path.join(root_dir, dataset_name)
 
     assert(len(models_dir) > 0)
 
-    print "Processing dataset ", dataset_name
+    print "Processing dataset ", dataset_name, ", num to process: ", num_to_process
     
     bag_filepath = os.path.join(out_dir, dataset_name + '_ds2.bag')
     
@@ -126,24 +127,40 @@ def processDataset(root_dir, models_dir, dataset_name, out_dir):
       write_rtk_gps(timestamp_ns, T_UTM_S, utm_zone, lat_deg, lon_deg, alt_m, status, bag)
     print "Done"
 
+    i = 0
     print "Writing images, front..."
     for ts_ns, img in iterate_images(dataset_dir, 'stereo/left', models_dir):
       write_img(ts_ns, img, 'mono_front', bag)
+      i += 1
+      if i > num_to_process:
+        break
     print "Done"
 
     print "Writing images, left..."
+    i = 0
     for ts_ns, img in iterate_images(dataset_dir, 'mono_left', models_dir):
       write_img(ts_ns, img, 'mono_left', bag)
+      i += 1
+      if i > num_to_process:
+        break
     print "Done"
 
     print "Writing images, rear..."
+    i = 0
     for ts_ns, img in iterate_images(dataset_dir, 'mono_rear', models_dir):
       write_img(ts_ns, img, 'mono_rear', bag)
+      i += 1
+      if i > num_to_process:
+        break
     print "Done"
 
     print "Writing images, right..."
+    i = 0
     for ts_ns, img in iterate_images(dataset_dir, 'mono_right', models_dir):
       write_img(ts_ns, img, 'mono_right', bag)
+      i += 1
+      if i > num_to_process:
+        break
     print "Done"
 
     bag.close()
@@ -153,6 +170,7 @@ def main():
     parser.add_argument('root_dir')
     parser.add_argument('--dataset', default='')
     parser.add_argument('--out_dir', default='')
+    parser.add_argument('--num_to_process', default=long(1e10))
     
     parsed_args = parser.parse_args()
 
@@ -168,16 +186,18 @@ def main():
 
     if not os.path.exists(out_dir):
       os.makedirs(out_dir)
+
+    num_to_process = parsed_args.num_to_process
     
     dataset_name = parsed_args.dataset
     if len(dataset_name) == 0:
       subfolders = os.listdir(root_dir)
       for subfolder in subfolders:
         if subfolder.count('-') == 5:
-          processDataset(root_dir, models_dir, subfolder, out_dir)
+          processDataset(root_dir, models_dir, subfolder, out_dir, num_to_process)
 
     else:
-      processDataset(root_dir, models_dir, dataset_name, out_dir)
+      processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process)
 
 
     return 0

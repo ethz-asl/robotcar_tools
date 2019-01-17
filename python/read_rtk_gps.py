@@ -41,7 +41,7 @@ def iterate_rtk_gps(root):
           pitch_rad = float(row[13])
           yaw_rad = float(row[14])
 
-          T_UTM_S = get_R_ENU_NED() * mk.Transformation(build_se3_transform([north, east, down, roll_rad, pitch_rad, yaw_rad]))
+          T_UTM_S = get_T_ENU_NED() * mk.Transformation(build_se3_transform([north, east, down, roll_rad, pitch_rad, yaw_rad]))
 
           yield timestamp_ns, T_UTM_S, utm_zone, lat_deg, lon_deg, alt_m, status
 
