@@ -1,0 +1,10 @@
+mono_right_01
+mono_right_02
+mono_right_03
+mono_right_04
+mono_right_05
+mono_right_06
+mono_right_07
+mono_right_08
+mono_right_09
+mono_right_10

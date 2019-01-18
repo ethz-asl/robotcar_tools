@@ -1,16 +1,3 @@
-vo
-stereo_left_01
-stereo_left_02
-stereo_left_03
-stereo_left_04
-stereo_left_05
-stereo_left_06
-stereo_left_07
-stereo_left_08
-stereo_left_09
-stereo_left_10
-mono_left_01
-mono_left_02
 mono_left_03
 mono_left_04
 mono_left_05
@@ -39,4 +26,3 @@ mono_right_07
 mono_right_08
 mono_right_09
 mono_right_10
-gps
