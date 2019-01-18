@@ -44,10 +44,10 @@ sensors:
         - 1e-5 #1e-6
   - id: 3a000000000000000000000000000000
     sensor_type: GPS_UTM
-    hardware_id: gps_utm
+    hardware_id: gps_rtk
   - id: 40000000000000000000000000000000
     sensor_type: GPS_WGS
-    hardware_id: gps_wgs
+    hardware_id: gps_rtk_fix
 ncameras:
   - label: Robotcar Factory Calibration 
     id: abc2019be058621f7036b5e765d23011

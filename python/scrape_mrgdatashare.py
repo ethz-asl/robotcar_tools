@@ -853,8 +853,6 @@ class Zipper:
 
         """
 
-        #IPython.embed()
-
         # tidy up
         print("tidying up dataset: " + self.dataset_handler.dataset)
         if self.num_successful_unzipped != 0:

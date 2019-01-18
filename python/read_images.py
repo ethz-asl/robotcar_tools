@@ -22,7 +22,7 @@ from camera_model import CameraModel
 import IPython
 import scipy.misc
 
-def iterate_images(root_dir, camera_description, models_dir):
+def iterate_images(root_dir, camera_description, models_dir, full_size=True):
   if 'stereo' in camera_description:
     timestamps_path = os.path.join(root_dir, 'stereo.timestamps')
   else:
@@ -45,9 +45,13 @@ def iterate_images(root_dir, camera_description, models_dir):
       timestamp_us = long(tokens[0])
       timestamp_ns = timestamp_us * long(1000)
 
-      filename_processed = os.path.join(images_dir, tokens[0] + '_ds2_undistorted.png')
+      if full_size:
+        filename_processed = os.path.join(images_dir, tokens[0] + '_undistorted.png')
+      else:
+        filename_processed = os.path.join(images_dir, tokens[0] + '_ds2_undistorted.png')
+
       if os.path.exists(filename_processed):
-        im_gray_downscaled = cv2.imread(filename_processed, cv2.IMREAD_GRAYSCALE)
+        im = cv2.imread(filename_processed, cv2.IMREAD_GRAYSCALE)
 
       else:
         datetime = dt.utcfromtimestamp(int(tokens[0])/1000000)
@@ -71,9 +75,14 @@ def iterate_images(root_dir, camera_description, models_dir):
         im_gray_downscaled = cv2.resize(im_gray, (im_gray.shape[1] / 2, im_gray.shape[0] / 2))
         cv2.imwrite(filename_processed, im_gray_downscaled)
 
+        if full_size:
+          im = im_gray
+        else:
+          im = im_gray_downscaled
+        
       if i % 100 == 0:
         print "At i ", i
 
       i += 1
 
-      yield timestamp_ns, im_gray_downscaled
+      yield timestamp_ns, im
