@@ -40,10 +40,11 @@ def write_rtk_gps(timestamp_ns, T_UTM_S, utm_zone, lat_deg, lon_deg, alt_m, stat
 
     fix = NavSatFix()
     fix.status = ros_status
-
     fix.latitude = lat_deg
     fix.longitude = lon_deg
     fix.altitude = alt_m
+    fix.header.frame_id = "WGS"
+    fix.header.stamp = ros_timestamp
 
     rospose = Odometry()
     rospose.child_frame_id = "S"
@@ -103,7 +104,7 @@ def write_img(ts_ns, img_array, camera, bag):
 
   bag.write('/' + camera + '/image_raw', rosimage, t=ros_timestamp)
 
-def processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process):
+def processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, full_size_images=True):
     assert(len(dataset_name) > 0)
 
     dataset_dir = os.path.join(root_dir, dataset_name)
@@ -112,8 +113,11 @@ def processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process):
 
     print "Processing dataset ", dataset_name, ", num to process: ", num_to_process
     
-    bag_filepath = os.path.join(out_dir, dataset_name + '_ds2.bag')
-    
+    if full_size_images:
+      bag_filepath = os.path.join(out_dir, dataset_name + '_ds2.bag')
+    else:
+      bag_filepath = os.path.join(out_dir, dataset_name + '.bag')
+
     print 'Opening bag ', bag_filepath, ' for writing.'
     bag = rosbag.Bag(bag_filepath, 'w')
 
@@ -129,7 +133,7 @@ def processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process):
 
     i = 0
     print "Writing images, front..."
-    for ts_ns, img in iterate_images(dataset_dir, 'stereo/left', models_dir):
+    for ts_ns, img in iterate_images(dataset_dir, 'stereo/left', models_dir, full_size=full_size_images):
       write_img(ts_ns, img, 'mono_front', bag)
       i += 1
       if i > num_to_process:
@@ -194,10 +198,12 @@ def main():
       subfolders = os.listdir(root_dir)
       for subfolder in subfolders:
         if subfolder.count('-') == 5:
-          processDataset(root_dir, models_dir, subfolder, out_dir, num_to_process)
+          processDataset(root_dir, models_dir, subfolder, out_dir, num_to_process, full_size_images=True)
+          processDataset(root_dir, models_dir, subfolder, out_dir, num_to_process, full_size_images=False)
 
     else:
-      processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process)
+      processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, full_size_images=True)
+      processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, full_size_images=False)
 
 
     return 0

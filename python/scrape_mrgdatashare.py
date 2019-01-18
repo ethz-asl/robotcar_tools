@@ -50,6 +50,7 @@ import requests
 import shutil
 import tarfile
 import time
+import IPython
 
 # urls
 login_url = "https://mrgdatashare.robots.ox.ac.uk/"
@@ -450,6 +451,9 @@ class Scraper:
         status_code = result.status_code
         print("got status_code: " + str(status_code))
 
+        print "bdslf"
+        IPython.embed()
+
         # check for success
         text = result.text
         if status_code != good_status_code or failed_login in text:
@@ -480,14 +484,14 @@ class Scraper:
         # download file
         good_scrape = True
         if not self.dry_run:
-            if something_wrong not in result.text:
-                self.download(url_handler, result)
-            else:
-                print(
-                        "file_url: " +
-                        url_handler.file_url +
-                        " was not found, skipping.")
-                good_scrape = False
+            #if something_wrong not in result.text:
+            self.download(url_handler, result)
+            #else:
+            #    print(
+            #            "file_url: " +
+            #            url_handler.file_url +
+            #            " was not found, skipping.")
+            #    good_scrape = False
 
         return good_scrape
 
