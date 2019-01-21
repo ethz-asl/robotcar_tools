@@ -99,7 +99,7 @@ def processDataset(root_dir, models_dir, dataset_name, camera='', multiprocessin
 
         print "Waiting for processes to complete..."
         for p in ps:
-          p.soin()
+          p.join()
 
         print "Joined."
       else:
