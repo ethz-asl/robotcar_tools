@@ -104,7 +104,7 @@ def write_img(ts_ns, img_array, camera, bag):
 
   bag.write('/' + camera + '/image_raw', rosimage, t=ros_timestamp)
 
-def processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, full_size_images=True):
+def processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, full_size_images=True, front_only=False):
     assert(len(dataset_name) > 0)
 
     dataset_dir = os.path.join(root_dir, dataset_name)
@@ -114,9 +114,9 @@ def processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, 
     print "Processing dataset ", dataset_name, ", num to process: ", num_to_process
     
     if full_size_images:
-      bag_filepath = os.path.join(out_dir, dataset_name + '_ds2.bag')
-    else:
       bag_filepath = os.path.join(out_dir, dataset_name + '.bag')
+    else:
+      bag_filepath = os.path.join(out_dir, dataset_name + '_ds2.bag')
 
     print 'Opening bag ', bag_filepath, ' for writing.'
     bag = rosbag.Bag(bag_filepath, 'w')
@@ -140,32 +140,33 @@ def processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, 
         break
     print "Done"
 
-    print "Writing images, left..."
-    i = 0
-    for ts_ns, img in iterate_images(dataset_dir, 'mono_left', models_dir):
-      write_img(ts_ns, img, 'mono_left', bag)
-      i += 1
-      if i > num_to_process:
-        break
-    print "Done"
+    if not front_only:
+      print "Writing images, left..."
+      i = 0
+      for ts_ns, img in iterate_images(dataset_dir, 'mono_left', models_dir):
+        write_img(ts_ns, img, 'mono_left', bag)
+        i += 1
+        if i > num_to_process:
+          break
+      print "Done"
 
-    print "Writing images, rear..."
-    i = 0
-    for ts_ns, img in iterate_images(dataset_dir, 'mono_rear', models_dir):
-      write_img(ts_ns, img, 'mono_rear', bag)
-      i += 1
-      if i > num_to_process:
-        break
-    print "Done"
+      print "Writing images, rear..."
+      i = 0
+      for ts_ns, img in iterate_images(dataset_dir, 'mono_rear', models_dir):
+        write_img(ts_ns, img, 'mono_rear', bag)
+        i += 1
+        if i > num_to_process:
+          break
+      print "Done"
 
-    print "Writing images, right..."
-    i = 0
-    for ts_ns, img in iterate_images(dataset_dir, 'mono_right', models_dir):
-      write_img(ts_ns, img, 'mono_right', bag)
-      i += 1
-      if i > num_to_process:
-        break
-    print "Done"
+      print "Writing images, right..."
+      i = 0
+      for ts_ns, img in iterate_images(dataset_dir, 'mono_right', models_dir):
+        write_img(ts_ns, img, 'mono_right', bag)
+        i += 1
+        if i > num_to_process:
+          break
+      print "Done"
 
     bag.close()
 
@@ -175,6 +176,7 @@ def main():
     parser.add_argument('--dataset', default='')
     parser.add_argument('--out_dir', default='')
     parser.add_argument('--num_to_process', default=long(1e10))
+    parser.add_argument('--front_only', default=False, action="store_true")
     
     parsed_args = parser.parse_args()
 
@@ -192,18 +194,20 @@ def main():
       os.makedirs(out_dir)
 
     num_to_process = parsed_args.num_to_process
+
+    front_only = parsed_args.front_only
     
     dataset_name = parsed_args.dataset
     if len(dataset_name) == 0:
       subfolders = os.listdir(root_dir)
       for subfolder in subfolders:
         if subfolder.count('-') == 5:
-          processDataset(root_dir, models_dir, subfolder, out_dir, num_to_process, full_size_images=True)
-          processDataset(root_dir, models_dir, subfolder, out_dir, num_to_process, full_size_images=False)
+          processDataset(root_dir, models_dir, subfolder, out_dir, num_to_process, full_size_images=True, front_only=front_only)
+          processDataset(root_dir, models_dir, subfolder, out_dir, num_to_process, full_size_images=False, front_only=front_only)
 
     else:
-      processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, full_size_images=True)
-      processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, full_size_images=False)
+      processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, full_size_images=True, front_only=front_only)
+      processDataset(root_dir, models_dir, dataset_name, out_dir, num_to_process, full_size_images=False, front_only=front_only)
 
 
     return 0
