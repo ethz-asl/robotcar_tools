@@ -51,6 +51,7 @@ import shutil
 import tarfile
 import time
 import IPython
+from distutils.dir_util import copy_tree
 
 # urls
 login_url = "https://mrgdatashare.robots.ox.ac.uk/"
@@ -451,9 +452,6 @@ class Scraper:
         status_code = result.status_code
         print("got status_code: " + str(status_code))
 
-        print "bdslf"
-        IPython.embed()
-
         # check for success
         text = result.text
         if status_code != good_status_code or failed_login in text:
@@ -767,8 +765,8 @@ class DatasetHandler:
 
         """
 
-        if not parse_args.overwrite:
-            raise IOError("Please specify option overwrite.")
+        #if not parse_args.overwrite:
+        #    raise IOError("Please specify option overwrite.")
         return parse_args.overwrite
 
     def check(self):
@@ -779,22 +777,25 @@ class DatasetHandler:
 
         """
 
+        if not os.path.exists(self.dataset_dir):
+          os.makedirs(self.dataset_dir)
+
         # confirm overwrite
-        if not self.overwrite and os.path.exists(self.dataset_dir):
-            raise ValueError(
-                "dataset: " +
-                dataset +
-                " cannot be overwritten.")
-        elif not self.overwrite and not os.path.exists(self.dataset_dir):
-            print("creating dataset: " + dataset)
-            os.mkdir(self.dataset_dir)
-        elif self.overwrite and os.path.exists(self.dataset_dir):
-            print("overwriting dataset: " + dataset)
-            shutil.rmtree(self.dataset_dir)
-            os.mkdir(self.dataset_dir)
-        elif self.overwrite and not os.path.exists(self.dataset_dir):
-            print("creating dataset: " + dataset)
-            os.mkdir(self.dataset_dir)
+        #if not self.overwrite and os.path.exists(self.dataset_dir):
+        #    raise ValueError(
+        #        "dataset: " +
+        #        dataset +
+        #        " cannot be overwritten.")
+        #elif not self.overwrite and not os.path.exists(self.dataset_dir):
+        #    print("creating dataset: " + dataset)
+        #    os.mkdir(self.dataset_dir)
+        #elif self.overwrite and os.path.exists(self.dataset_dir):
+            #print("overwriting dataset: " + dataset)
+            #shutil.rmtree(self.dataset_dir)
+            #os.mkdir(self.dataset_dir)
+        #elif self.overwrite and not os.path.exists(self.dataset_dir):
+        #    print("creating dataset: " + dataset)
+        #    os.mkdir(self.dataset_dir)
 
 
 class Zipper:
@@ -817,7 +818,7 @@ class Zipper:
         self.num_successful_unzipped = 0
 
     # unzip
-    def unzip(self, url_handler):
+    def unzip(self, url_handler, delete_unzipped_tar=False):
         """Extracts archive contents.
 
         Args:
@@ -844,7 +845,8 @@ class Zipper:
                     url_handler.local_file_path)
 
         # clear tar
-        os.remove(url_handler.local_file_path)
+        if delete_unzipped_tar:
+          os.remove(url_handler.local_file_path)
 
     def tidy_up(self):
         """Tidies up dataset's download directory.
@@ -854,24 +856,27 @@ class Zipper:
         # tidy up
         print("tidying up dataset: " + self.dataset_handler.dataset)
         if self.num_successful_unzipped != 0:
+            copy_tree(self.dataset_handler.tar_dir, self.dataset_handler.dataset_dir)
             # copy extracted contents to tmp
-            shutil.copytree(
-                self.dataset_handler.tar_dir,
-                self.dataset_handler.tmp_dir)
+            #shutil.copytree(
+            #    self.dataset_handler.tar_dir,
+            #    self.dataset_handler.dataset_dir)
+
+            shutil.rmtree(self.dataset_handler.tar_dir)
 
             # delete root download
-            shutil.rmtree(self.dataset_handler.dataset_dir)
+            #shutil.rmtree(self.dataset_handler.dataset_dir)
 
             # move extracted files back to root download
-            shutil.copytree(
-                self.dataset_handler.tmp_dir,
-                self.dataset_handler.dataset_dir)
+            #shutil.copytree(
+            #    self.dataset_handler.tmp_dir,
+            #    self.dataset_handler.dataset_dir)
 
             # clear tmp files
-            shutil.rmtree(self.dataset_handler.tmp_dir)
-        else:
+            #shutil.rmtree(self.dataset_handler.tmp_dir)
+        #else:
             # no data was downloaded, remove empty folder
-            shutil.rmtree(self.dataset_handler.dataset_dir)
+            #shutil.rmtree(self.dataset_handler.dataset_dir)
 
 
 class URLHandler:
@@ -993,7 +998,7 @@ if __name__ == "__main__":
     argument_parser.add_argument(
         "--overwrite",
         type=bool,
-        default=True,
+        default=False,
         help="Overwrite datasets already downloaded?")
     argument_parser.add_argument(
         "--period_duration",
@@ -1035,6 +1040,8 @@ if __name__ == "__main__":
     # start throttle
     throttle = Throttle(parse_args)
 
+    overwrite = parse_args.overwrite
+
     # iterate datasets
     for dataset in datasets.datasets:
         # apply throttle
@@ -1062,13 +1069,26 @@ if __name__ == "__main__":
 
             # set up URL handler
             url_handler = URLHandler(dataset_handler, file_pattern)
+            if os.path.exists(url_handler.local_file_path) and os.path.getsize(url_handler.local_file_path) < 4000:
+              os.remove(url_handler.local_file_path)
 
-            # download file
-            good_scrape = scraper.scrape(url_handler)
+            if not os.path.exists(url_handler.local_file_path) or overwrite:
+              # download file
+              scraper = Scraper(parse_args)
+              scraper.login()
+              good_scrape = scraper.scrape(url_handler)
 
-            # unzip
-            if good_scrape and not scraper.dry_run:
-                zipper.unzip(url_handler)
+              if good_scrape and os.path.getsize(url_handler.local_file_path) < 4000:
+                os.remove(url_handler.local_file_path)
+                good_scrape = False
+
+              # unzip
+              if good_scrape and not scraper.dry_run:
+                  zipper.unzip(url_handler)
+            else:
+              print "Skipping download, because already exists."
+
+
 
         # tidy up
         if not scraper.dry_run:

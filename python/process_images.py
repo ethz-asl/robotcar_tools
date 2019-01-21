@@ -22,8 +22,10 @@ from image import load_image
 from camera_model import CameraModel
 import IPython
 import scipy.misc
+from multiprocessing import Process
 
 def process_images(root_dir, camera_description, models_dir):
+  print "Processing images, ", camera_description
   if 'stereo' in camera_description:
     timestamps_path = os.path.join(root_dir, 'stereo.timestamps')
   else:
@@ -73,8 +75,10 @@ def process_images(root_dir, camera_description, models_dir):
 
       idx += 1
 
+  print "Done with ", camera_description
 
-def processDataset(root_dir, models_dir, dataset_name, camera=''):
+
+def processDataset(root_dir, models_dir, dataset_name, camera='', multiprocessing=True):
     assert(len(dataset_name) > 0)
 
     dataset_dir = os.path.join(root_dir, dataset_name)
@@ -82,32 +86,37 @@ def processDataset(root_dir, models_dir, dataset_name, camera=''):
     assert(len(models_dir) > 0)
 
     print "Processing dataset ", dataset_name
-    
+
+    ps = []    
     if camera == '':
-      print "Processing images, front..."
-      process_images(dataset_dir, 'stereo/left', models_dir)
+      if multiprocessing:
+        ps.append(Process(target=process_images, args=(dataset_dir, 'stereo/left', models_dir,)))
+        ps.append(Process(target=process_images, args=(dataset_dir, 'mono_left', models_dir,)))
+        ps.append(Process(target=process_images, args=(dataset_dir, 'mono_rear', models_dir,)))
+        ps.append(Process(target=process_images, args=(dataset_dir, 'mono_right', models_dir,)))
+        for p in ps:
+          p.start()
 
-      print "Processing images, left..."
-      process_images(dataset_dir, 'mono_left', models_dir)
-      print "Done"
+        print "Waiting for processes to complete..."
+        for p in ps:
+          p.join()
 
-      print "Processing images, rear..."
-      process_images(dataset_dir, 'mono_rear', models_dir)
-      print "Done"
+        print "Joined."
+      else:
 
-      print "Processing images, right..."
-      process_images(dataset_dir, 'mono_right', models_dir)
-      print "Done"  
+        process_images(dataset_dir, 'stereo/left', models_dir)
+        process_images(dataset_dir, 'mono_left', models_dir)
+        process_images(dataset_dir, 'mono_rear', models_dir)
+        process_images(dataset_dir, 'mono_right', models_dir)
     else:
-      print "Processing images, ", camera, "..."
       process_images(dataset_dir, camera, models_dir)
-      print "Done"  
 
 def main():
     parser = argparse.ArgumentParser(description='''...''')
     parser.add_argument('root_dir')
     parser.add_argument('--dataset', default='')
     parser.add_argument('--camera', default='')
+    parser.add_argument('--single_process', default=False, action="store_true")
     
     parsed_args = parser.parse_args()
 
@@ -118,16 +127,17 @@ def main():
     assert(os.path.exists(models_dir)) 
 
     camera = parsed_args.camera
-    
+    multiprocessing = not parsed_args.single_process
+
     dataset_name = parsed_args.dataset
     if len(dataset_name) == 0:
       subfolders = os.listdir(root_dir)
       for subfolder in subfolders:
         if subfolder.count('-') == 5:
-          processDataset(root_dir, models_dir, subfolder, camera)
+          processDataset(root_dir, models_dir, subfolder, camera, multiprocessing)
 
     else:
-      processDataset(root_dir, models_dir, dataset_name, camera)
+      processDataset(root_dir, models_dir, dataset_name, camera, multiprocessing)
 
     return 0
 
