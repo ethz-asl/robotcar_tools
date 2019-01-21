@@ -69,6 +69,9 @@ def main():
           if ending != ".bag":
             continue
 
+          if 'ds2' in filename:
+            continue
+
           filepath = os.path.join(root, filename_with_ending)
           processRosbag(filepath, delete_input_bag=delete_input_bag)
 
